@@ -6,5 +6,4 @@
 *.tar.gz
 *.Rcheck/
 *.png
-*.md
 inst/doc
