@@ -25,19 +25,19 @@ devtools::install_github("MarekDejaUJ/UnivRankR")
 #> Downloading GitHub repo MarekDejaUJ/UnivRankR@HEAD
 #> isoband (0.2.7 -> 0.3.0) [CRAN]
 #> Installing 1 packages: isoband
-#> Installing package into '/private/var/folders/vh/njwnyy0141n0zbrgjw2vbz800000gn/T/RtmpxqOzYK/temp_libpath38b25758f219'
+#> Installing package into '/private/var/folders/vh/njwnyy0141n0zbrgjw2vbz800000gn/T/RtmpsGQMJx/temp_libpath43d56c5bbdb3'
 #> (as 'lib' is unspecified)
 #> 
 #> The downloaded binary packages are in
-#>  /var/folders/vh/njwnyy0141n0zbrgjw2vbz800000gn/T//RtmpOiUwsj/downloaded_packages
+#>  /var/folders/vh/njwnyy0141n0zbrgjw2vbz800000gn/T//RtmpMHUCiB/downloaded_packages
 #> ── R CMD build ─────────────────────────────────────────────────────────────────
-#> * checking for file ‘/private/var/folders/vh/njwnyy0141n0zbrgjw2vbz800000gn/T/RtmpOiUwsj/remotes3c795955cea2/MarekDejaUJ-UnivRankR-0663c63/DESCRIPTION’ ... OK
+#> * checking for file ‘/private/var/folders/vh/njwnyy0141n0zbrgjw2vbz800000gn/T/RtmpMHUCiB/remotes464a1866f3c8/MarekDejaUJ-UnivRankR-009fab4/DESCRIPTION’ ... OK
 #> * preparing ‘UnivRankR’:
 #> * checking DESCRIPTION meta-information ... OK
 #> * checking for LF line-endings in source and make files and shell scripts
 #> * checking for empty or unneeded directories
-#> * building ‘UnivRankR_0.2.1.tar.gz’
-#> Installing package into '/private/var/folders/vh/njwnyy0141n0zbrgjw2vbz800000gn/T/RtmpxqOzYK/temp_libpath38b25758f219'
+#> * building ‘UnivRankR_0.2.2.tar.gz’
+#> Installing package into '/private/var/folders/vh/njwnyy0141n0zbrgjw2vbz800000gn/T/RtmpsGQMJx/temp_libpath43d56c5bbdb3'
 #> (as 'lib' is unspecified)
 ```
 
@@ -377,4 +377,118 @@ print(comparison)
 #> 2 Supplier_B        1            2
 #> 3 Supplier_C        3            3
 #> 4 Supplier_D        2            1
+```
+
+## 8. Meta-Ranking Consensus
+
+Different MCDM methods can sometimes yield slightly different rankings
+due to their mathematical assumptions. To ensure the robustness of our
+decision, we use the `fuzzy_meta_ranking()` function.
+
+**Figure 1: Meta-Ranking Workflow**
+
+``` text
+[ INPUTS ]
+   Data Matrix  ----.
+   Weights (BWM) ---+---> [ INTERNAL STEP: Run VIKOR ]  ----> Ranking 1
+                    |
+                    +---> [ INTERNAL STEP: Run TOPSIS ] ----> Ranking 2
+                    |
+                    '---> [ INTERNAL STEP: Run WASPAS ] ----> Ranking 3
+                                                                 |
+                                                                 v
+                                                     [ CONSENSUS ALGORITHMS ]
+                                                     1. Sum of Ranks
+                                                     2. Theory of Dominance
+                                                     3. RankAggreg (GA)
+                                                                 |
+                                                                 v
+                                                          [ FINAL OUTPUT ]
+                                                          Consensus Table
+```
+
+### Meta-Ranking Workflow
+
+The `fuzzy_meta_ranking()` function follows this internal logic:
+
+``` mermaid
+flowchart LR
+    A[Data Matrix] --> D
+    B[Weights/BWM] --> D
+    
+    subgraph Internal_Steps [Individual Methods]
+    direction TB
+    D[Run VIKOR] --> R1(Rank 1)
+    E[Run TOPSIS] --> R2(Rank 2)
+    F[Run WASPAS] --> R3(Rank 3)
+    end
+    
+    A --> E
+    B --> E
+    A --> F
+    B --> F
+
+    R1 --> G
+    R2 --> G
+    R3 --> G
+    
+    subgraph Consensus [Consensus Algorithms]
+    direction TB
+    G{Aggregation}
+    G --> H[Sum of Ranks]
+    G --> I[Theory of Dominance]
+    G --> J[RankAggreg GA]
+    end
+    
+    H --> K[FINAL OUTPUT:\nConsensus Table]
+    I --> K
+    J --> K
+    
+    style Internal_Steps fill:#f9f9f9,stroke:#333,stroke-width:2px
+    style Consensus fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
+    style K fill:#dcedc8,stroke:#33691e,stroke-width:2px
+```
+
+This aggregates the results from VIKOR, TOPSIS, and WASPAS using three
+consensus algorithms: 1. **Sum of Ranks:** Simple arithmetic sum (lower
+is better). 2. **Theory of Dominance:** A voting mechanism based on
+pairwise comparisons. 3. **Rank Aggregation:** Uses an evolutionary
+algorithm (via the `RankAggreg` package) to find the optimal list
+ordering.
+
+``` r
+# Run the Meta-Ranking using the Expert (BWM) preferences
+meta_res <- fuzzy_meta_ranking( decision_mat = d_mat, criteria_types =
+crit_types, bwm_best = bwm_best_vec, bwm_worst = bwm_worst_vec )
+#> Calculating weights using BWM...
+#> Calculating weights using BWM...
+#> Calculating weights using BWM...
+```
+
+### 1. View the Consolidated Ranking Table
+
+``` r
+# This shows how the 3 methods ranked the suppliers, and the final Consensus
+
+print(meta_res$comparison)
+#>   Alternative R_VIKOR R_TOPSIS R_WASPAS Meta_Sum Meta_Dominance Meta_Aggreg
+#> 1  Supplier_A       4        4        4        4              4           4
+#> 2  Supplier_B       1        1        2        1              1           1
+#> 3  Supplier_C       3        3        3        3              3           3
+#> 4  Supplier_D       2        2        1        2              2           2
+```
+
+### 2. Check Method Consistency (Correlation)
+
+``` r
+# High correlation (>0.9) indicates strong agreement between methods
+
+print(round(meta_res$correlations, 2))
+#>                R_VIKOR R_TOPSIS R_WASPAS Meta_Sum Meta_Dominance Meta_Aggreg
+#> R_VIKOR            1.0      1.0      0.8      1.0            1.0         1.0
+#> R_TOPSIS           1.0      1.0      0.8      1.0            1.0         1.0
+#> R_WASPAS           0.8      0.8      1.0      0.8            0.8         0.8
+#> Meta_Sum           1.0      1.0      0.8      1.0            1.0         1.0
+#> Meta_Dominance     1.0      1.0      0.8      1.0            1.0         1.0
+#> Meta_Aggreg        1.0      1.0      0.8      1.0            1.0         1.0
 ```

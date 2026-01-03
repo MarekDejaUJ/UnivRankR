@@ -175,3 +175,99 @@ comparison <- data.frame(
 )
 print(comparison)
 ```
+## 8. Meta-Ranking Consensus
+
+Different MCDM methods can sometimes yield slightly different rankings
+due to their mathematical assumptions. To ensure the robustness of our
+decision, we use the `fuzzy_meta_ranking()` function.
+
+**Figure 1: Meta-Ranking Workflow**
+
+```{text}
+[ INPUTS ]
+   Data Matrix  ----.
+   Weights (BWM) ---+---> [ INTERNAL STEP: Run VIKOR ]  ----> Ranking 1
+                    |
+                    +---> [ INTERNAL STEP: Run TOPSIS ] ----> Ranking 2
+                    |
+                    '---> [ INTERNAL STEP: Run WASPAS ] ----> Ranking 3
+                                                                 |
+                                                                 v
+                                                     [ CONSENSUS ALGORITHMS ]
+                                                     1. Sum of Ranks
+                                                     2. Theory of Dominance
+                                                     3. RankAggreg (GA)
+                                                                 |
+                                                                 v
+                                                          [ FINAL OUTPUT ]
+                                                          Consensus Table
+```
+
+### Meta-Ranking Workflow
+
+The `fuzzy_meta_ranking()` function follows this internal logic:
+
+``` mermaid
+flowchart LR
+    A[Data Matrix] --> D
+    B[Weights/BWM] --> D
+    
+    subgraph Internal_Steps [Individual Methods]
+    direction TB
+    D[Run VIKOR] --> R1(Rank 1)
+    E[Run TOPSIS] --> R2(Rank 2)
+    F[Run WASPAS] --> R3(Rank 3)
+    end
+    
+    A --> E
+    B --> E
+    A --> F
+    B --> F
+
+    R1 --> G
+    R2 --> G
+    R3 --> G
+    
+    subgraph Consensus [Consensus Algorithms]
+    direction TB
+    G{Aggregation}
+    G --> H[Sum of Ranks]
+    G --> I[Theory of Dominance]
+    G --> J[RankAggreg GA]
+    end
+    
+    H --> K[FINAL OUTPUT:\nConsensus Table]
+    I --> K
+    J --> K
+    
+    style Internal_Steps fill:#f9f9f9,stroke:#333,stroke-width:2px
+    style Consensus fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
+    style K fill:#dcedc8,stroke:#33691e,stroke-width:2px
+```
+
+This aggregates the results from VIKOR, TOPSIS, and WASPAS using three
+consensus algorithms: 1. **Sum of Ranks:** Simple arithmetic sum (lower
+is better). 2. **Theory of Dominance:** A voting mechanism based on
+pairwise comparisons. 3. **Rank Aggregation:** Uses an evolutionary
+algorithm (via the `RankAggreg` package) to find the optimal list
+ordering.
+
+```{r}
+# Run the Meta-Ranking using the Expert (BWM) preferences
+meta_res <- fuzzy_meta_ranking( decision_mat = d_mat, criteria_types =
+crit_types, bwm_best = bwm_best_vec, bwm_worst = bwm_worst_vec )
+```
+### 1. View the Consolidated Ranking Table
+
+```{r}
+# This shows how the 3 methods ranked the suppliers, and the final Consensus
+
+print(meta_res$comparison)
+```
+### 2. Check Method Consistency (Correlation)
+
+```{r}
+# High correlation (>0.9) indicates strong agreement between methods
+
+print(round(meta_res$correlations, 2))
+```
