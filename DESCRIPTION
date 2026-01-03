@@ -11,7 +11,7 @@ Description: Implements fuzzy MCDM methods (TOPSIS, VIKOR, WASPAS) for decision-
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
-Imports: Rglpk, ggplot2, ggrepel
+Imports: Rglpk, ggplot2, ggrepel, RankAggreg, stats
 RoxygenNote: 7.3.3
 NeedsCompilation: no
 Suggests: 
