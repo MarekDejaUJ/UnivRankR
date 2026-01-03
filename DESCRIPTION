@@ -1,0 +1,22 @@
+Package: UnivRankR
+Type: Package
+Title: Fuzzy Multi-Criteria Decision Making with BWM Integration
+Version: 0.2.1
+Author: Marek Deja
+Maintainer: Marek Deja <marek.deja@uj.edu.pl>
+Description: Implements fuzzy MCDM methods (TOPSIS, VIKOR, WASPAS) for decision-making problems.
+    Includes an automated data preparation pipeline for scaling raw data (Likert, continuous)
+    to Saaty's 1-9 scale and fuzzifying it. Features an integrated Best-Worst Method (BWM)
+    solver for calculating criteria weights using linear programming.
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+Imports: Rglpk, ggplot2, ggrepel
+RoxygenNote: 7.3.3
+NeedsCompilation: no
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
+Depends: 
+    R (>= 3.5)

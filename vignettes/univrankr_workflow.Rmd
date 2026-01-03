@@ -1,0 +1,150 @@
+---
+title: "Full Workflow: Fuzzy VIKOR with BWM"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Full Workflow: Fuzzy VIKOR with BWM}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(UnivRankR)
+```
+
+## 1. Load Data
+
+We use the built-in dataset `mcdm_raw_data`.
+
+```{r}
+data("mcdm_raw_data", package = "UnivRankR")
+head(mcdm_raw_data)
+```
+
+## 2. Define Measurement Model
+
+```{r}
+mcdm_syntax <- "
+  Cost           =~ cost_raw_mat + cost_labor;
+  Quality        =~ qual_durability + qual_finish + qual_defects + qual_ux;
+  Delivery       =~ del_time_avg + del_reliability + del_tracking;
+  Sustainability =~ sus_co2 + sus_waste + sus_material + sus_social
+"
+```
+
+## 3. Prepare Data
+
+```{r}
+d_mat <- prepare_mcdm_data(
+  data = mcdm_raw_data, 
+  syntax = mcdm_syntax, 
+  alternative_col = "Alternative" # Aggregate by this column
+)
+
+# The result is a 4x12 matrix (4 Suppliers x 3 Fuzzy Values per 4 Criteria)
+print(d_mat)
+print(attr(d_mat, "criteria_names"))
+
+# Calculate the crisp weights (one per criterion) for later use
+w_entropy <- calculate_entropy_weights(d_mat)
+print(round(w_entropy, 3))
+
+# Expand weights to match fuzzy matrix structure
+w_expanded <- rep(w_entropy, each = 3)
+
+# Define BWM parameters for later use
+bwm_best_vec  <- c(8, 1, 3, 2) 
+bwm_worst_vec <- c(1, 8, 4, 6)
+```
+
+## 4. Run Analysis (BWM Weights)
+
+```{r}
+crit_types <- c("min", "max", "max", "max")
+
+# 1. Fuzzy VIKOR (Compromise Solution)
+res_vikor <- fuzzy_vikor(
+  decision_mat = d_mat,
+  criteria_types = crit_types,
+  bwm_best = bwm_best_vec,
+  bwm_worst = bwm_worst_vec
+)
+
+# 2. Fuzzy TOPSIS (Distance to Ideal)
+res_topsis <- fuzzy_topsis(
+  decision_mat = d_mat,
+  criteria_types = crit_types,
+  bwm_best = bwm_best_vec,
+  bwm_worst = bwm_worst_vec
+)
+
+# 3. Fuzzy WASPAS (Weighted Aggregation)
+res_waspas <- fuzzy_waspas(
+  decision_mat = d_mat,
+  criteria_types = crit_types,
+  bwm_best = bwm_best_vec,
+  bwm_worst = bwm_worst_vec
+)
+
+# Print BWM outputs
+print(res_vikor)
+print(res_topsis)
+print(res_waspas)
+```
+
+## 5. Plot BWM Results
+
+```{r, fig.width=6, fig.height=4}
+plot(res_vikor)
+plot(res_topsis)
+plot(res_waspas)
+```
+
+## 6. Run Analysis with Entropy (Data-Driven)
+
+We use distinct variable names (suffixed with `_ent`) so we don't overwrite the BWM results.
+
+```{r}
+### --- A. Fuzzy VIKOR ---
+res_vikor_ent <- fuzzy_vikor(
+  decision_mat = d_mat,
+  criteria_types = crit_types,
+  weights = w_expanded
+)
+
+### --- B. Fuzzy TOPSIS ---
+res_topsis_ent <- fuzzy_topsis(
+  decision_mat = d_mat,
+  criteria_types = crit_types,
+  weights = w_expanded
+)
+
+### --- C. Fuzzy WASPAS ---
+res_waspas_ent <- fuzzy_waspas(
+  decision_mat = d_mat,
+  criteria_types = crit_types,
+  weights = w_expanded
+)
+
+# Print Entropy outputs
+print(res_vikor_ent)
+print(res_topsis_ent)
+print(res_waspas_ent)
+```
+
+## 7. Compare Rankings
+
+```{r}
+comparison <- data.frame(
+  Supplier = rownames(d_mat),
+  Rank_BWM = res_vikor$results$Ranking,          # From Section 4
+  Rank_Entropy = res_vikor_ent$results$Ranking   # From Section 6
+)
+print(comparison)
+```
