@@ -1,7 +1,7 @@
 Package: UnivRankR
 Type: Package
 Title: Fuzzy Multi-Criteria Decision Making with BWM Integration
-Version: 0.2.1
+Version: 0.2.2
 Author: Marek Deja
 Maintainer: Marek Deja <marek.deja@uj.edu.pl>
 Description: Implements fuzzy MCDM methods (TOPSIS, VIKOR, WASPAS) for decision-making problems.
