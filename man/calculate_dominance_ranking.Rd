@@ -4,21 +4,17 @@
 \alias{calculate_dominance_ranking}
 \title{Theory of Dominance for Ranking Consensus}
 \usage{
-calculate_dominance_ranking(r1, r2, r3)
+calculate_dominance_ranking(rank_mat)
 }
 \arguments{
-\item{r1}{Numeric vector. First ranking.}
-
-\item{r2}{Numeric vector. Second ranking.}
-
-\item{r3}{Numeric vector. Third ranking.}
+\item{rank_mat}{A matrix where columns are methods and rows are alternatives.}
 }
 \value{
 A numeric vector containing the final consensus ranking.
 }
 \description{
 Calculates a consensus ranking based on the Theory of Dominance. It compares
-three distinct rankings and determines a final position based on majority rule
+multiple rankings and determines a final position based on majority rule
 and dominance logic.
 }
 \keyword{internal}

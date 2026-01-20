@@ -168,10 +168,29 @@ res_waspas_ent <- fuzzy_waspas(
   weights = w_expanded
 )
 
-# Print Entropy outputs
-print(res_vikor_ent)
-print(res_topsis_ent)
-print(res_waspas_ent)
+### --- D. Fuzzy MULTIMOORA ---
+res_mm_ent <- fuzzy_multimoora(
+  decision_mat = d_mat,
+  criteria_types = crit_types,
+  weights = w_expanded
+)
+
+### --- E. Fuzzy PROMETHEE ---
+res_prom_ent <- fuzzy_promethee(
+  decision_mat = d_mat,
+  preference_params = prom_params, # Reusing params from Section 4
+  weights = w_expanded
+)
+
+# Print Entropy Rankings
+print(data.frame(
+  Alt = rownames(d_mat),
+  VIKOR = res_vikor_ent$results$Ranking,
+  TOPSIS = res_topsis_ent$results$Ranking,
+  WASPAS = res_waspas_ent$results$Ranking,
+  MMOORA = res_mm_ent$results$Final_Rank,
+  PROM = res_prom_ent$results$Ranking
+))
 ```
 
 ## 7. Compare Rankings
@@ -191,27 +210,6 @@ Different MCDM methods can sometimes yield slightly different rankings
 due to their mathematical assumptions. To ensure the robustness of our
 decision, we use the `fuzzy_meta_ranking()` function.
 
-**Figure 1: Meta-Ranking Workflow**
-
-```{text}
-[ INPUTS ]
-   Data Matrix  ----.
-   Weights (BWM) ---+---> [ INTERNAL STEP: Run VIKOR ]  ----> Ranking 1
-                    |
-                    +---> [ INTERNAL STEP: Run TOPSIS ] ----> Ranking 2
-                    |
-                    '---> [ INTERNAL STEP: Run WASPAS ] ----> Ranking 3
-                                                                 |
-                                                                 v
-                                                     [ CONSENSUS ALGORITHMS ]
-                                                     1. Sum of Ranks
-                                                     2. Theory of Dominance
-                                                     3. RankAggreg (GA)
-                                                                 |
-                                                                 v
-                                                          [ FINAL OUTPUT ]
-                                                          Consensus Table
-```
 
 ### Meta-Ranking Workflow
 
@@ -264,14 +262,19 @@ ordering.
 
 ```{r}
 # Run the Meta-Ranking using the Expert (BWM) preferences
-meta_res <- fuzzy_meta_ranking( decision_mat = d_mat, criteria_types =
-crit_types, bwm_best = bwm_best_vec, bwm_worst = bwm_worst_vec )
+# Note: We pass the PROMETHEE parameters here.
+meta_res <- fuzzy_meta_ranking(
+  decision_mat = d_mat, 
+  criteria_types = crit_types, 
+  bwm_best = bwm_best_vec, 
+  bwm_worst = bwm_worst_vec,
+  preference_params = prom_params
+)
 ```
 ### 1. View the Consolidated Ranking Table
 
 ```{r}
-# This shows how the 3 methods ranked the suppliers, and the final Consensus
-
+# This table compares individual method rankings against the Consensus
 print(meta_res$comparison)
 ```
 ### 2. Check Method Consistency (Correlation)

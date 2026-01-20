@@ -8,6 +8,7 @@ fuzzy_meta_ranking(
   decision_mat,
   criteria_types,
   weights = NULL,
+  preference_params = NULL,
   bwm_best = NULL,
   bwm_worst = NULL,
   lambda = 0.5,
@@ -15,11 +16,14 @@ fuzzy_meta_ranking(
 )
 }
 \arguments{
-\item{decision_mat}{A fuzzy decision matrix (output of `prepare_mcdm_data` or similar structure).}
+\item{decision_mat}{A fuzzy decision matrix (output of `prepare_mcdm_data`).}
 
-\item{criteria_types}{Character vector defining criteria types (e.g., c("min", "max", ...)).}
+\item{criteria_types}{Character vector defining criteria types (e.g., c("min", "max")).}
 
 \item{weights}{Numeric vector of weights. If NULL, entropy weights are calculated.}
+
+\item{preference_params}{(Optional) Dataframe for PROMETHEE parameters.
+If NULL, defaults (Linear, q=0, p=2) are used.}
 
 \item{bwm_best}{(Optional) Vector for Best-Worst Method best comparison.}
 
@@ -35,6 +39,6 @@ A list containing:
 \item{correlations}{Spearman correlation matrix between methods.}
 }
 \description{
-Aggregates results from multiple Fuzzy MCDM methods (VIKOR, TOPSIS, WASPAS)
+Aggregates results from 5 Fuzzy MCDM methods (VIKOR, TOPSIS, WASPAS, MULTIMOORA, PROMETHEE)
 to produce a robust consensus ranking.
 }
