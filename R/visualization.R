@@ -162,5 +162,93 @@ plot.fuzzy_waspas_res <- function(x, ...) {
     .mcdm_theme_adv()
 }
 
+#' Plot MULTIMOORA Strategic Position Map
+#'
+#' @description Visualizes the trade-off between the Ratio System (Additive Utility)
+#' and the Reference Point (Min-Max Regret).
+#'
+#' @param x An object of class `fuzzy_multimoora_res`.
+#' @param ... Additional arguments passed to plot.
+#' @export
+plot.fuzzy_multimoora_res <- function(x, ...) {
+  df <- x$results
+
+  # 1. Calculation for visualization
+  n_alts <- nrow(df)
+  df$RankStrength <- (n_alts - df$Final_Rank + 1)^2
+  mid_rs <- median(df$RS_Score)
+  mid_rp <- median(df$RP_Score)
+
+  ggplot(df, aes(x = RS_Score, y = RP_Score)) +
+    # Strategic Zone
+    annotate("rect", xmin = mid_rs, xmax = Inf, ymin = -Inf, ymax = mid_rp,
+             fill = "#E8F5E9", alpha = 0.5) +
+    # Guidelines
+    geom_vline(xintercept = mid_rs, linetype = "dashed", color = "grey60") +
+    geom_hline(yintercept = mid_rp, linetype = "dashed", color = "grey60") +
+    # Labels
+    annotate("text", x = max(df$RS_Score), y = min(df$RP_Score),
+             label = "LEADERS\n(High Utility, Low Regret)",
+             hjust = 1, vjust = 0, size = 3, fontface = "bold.italic", color = "darkgreen") +
+    # Bubbles
+    geom_point(aes(size = RankStrength, fill = as.factor(Final_Rank)),
+               shape = 21, color = "black", alpha = 0.8) +
+    geom_text_repel(aes(label = paste0("Alt ", Alternative)), box.padding = 0.5) +
+
+    # --- FIX START: Theme first, then Scales ---
+    .mcdm_theme_adv() +
+    scale_fill_brewer(palette = "RdYlGn", direction = -1, name = "Final\nRank") +
+    scale_size(guide = "none") +
+    # --- FIX END ---
+
+    labs(
+      title = "MULTIMOORA Strategic Map",
+      subtitle = "Comparison of Ratio System vs Reference Point.",
+      x = "Ratio System (Maximize)",
+      y = "Reference Point (Minimize)"
+    )
+}
+
+#' Plot PROMETHEE II Ranking
+#'
+#' @description Visualizes the Net Outranking Flows (Phi Net).
+#'
+#' @param x An object of class `fuzzy_promethee_res`.
+#' @param ... Additional arguments.
+#' @export
+plot.fuzzy_promethee_res <- function(x, ...) {
+  df <- x$results
+  df <- df[order(df$Phi_Net), ]
+  df$Alt_Label <- factor(paste0("Alt ", df$Alternative), levels = paste0("Alt ", df$Alternative))
+
+  ggplot(df, aes(x = Alt_Label, y = Phi_Net)) +
+    geom_segment(aes(x = Alt_Label, xend = Alt_Label, y = 0, yend = Phi_Net),
+                 color = "grey50", linewidth = 0.8) +
+    geom_point(aes(fill = Phi_Net), size = 6, shape = 21, color = "black") +
+    geom_hline(yintercept = 0, linetype = "dashed", color = "#D32F2F", alpha = 0.6) +
+    geom_text(aes(label = sprintf("%.2f", Phi_Net),
+                  vjust = ifelse(Phi_Net > 0, -1.5, 2)),
+              size = 3.5, fontface = "bold") +
+    coord_flip() +
+
+    # --- FIX START: Theme first, then Scales ---
+    .mcdm_theme_adv() +
+    scale_fill_gradient2(low = "#B71C1C", mid = "white", high = "#2E7D32", midpoint = 0,
+                         name = "Net Flow") +
+    # --- FIX END ---
+
+    labs(
+      title = "PROMETHEE II Ranking",
+      subtitle = "Net Outranking Flow (Phi). Positive = Dominating.",
+      x = "",
+      y = "Net Flow (Phi)"
+    )
+}
+
 # Fix for R CMD check global variable warnings
-utils::globalVariables(c("Def_S", "Def_R", "D_plus", "D_minus", "Score", "WSM", "WPM", "Performance", "Ranking", "Group", "Label", "Alternative"))
+utils::globalVariables(c(
+  "Def_S", "Def_R", "D_plus", "D_minus", "Score", "WSM", "WPM",
+  "Performance", "Ranking", "Group", "Label", "Alternative",
+  "RS_Score", "RP_Score", "FMF_Score", "Final_Rank", "RankStrength",
+  "Phi_Net", "Phi_Plus", "Phi_Minus", "Alt_Label"
+))

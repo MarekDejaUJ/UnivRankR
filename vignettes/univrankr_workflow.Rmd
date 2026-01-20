@@ -71,7 +71,7 @@ bwm_worst_vec <- c(1, 8, 4, 6)
 ```{r}
 crit_types <- c("min", "max", "max", "max")
 
-# 1. Fuzzy VIKOR (Compromise Solution)
+# --- 1. Fuzzy VIKOR (Compromise Solution) ---
 res_vikor <- fuzzy_vikor(
   decision_mat = d_mat,
   criteria_types = crit_types,
@@ -79,7 +79,7 @@ res_vikor <- fuzzy_vikor(
   bwm_worst = bwm_worst_vec
 )
 
-# 2. Fuzzy TOPSIS (Distance to Ideal)
+# --- 2. Fuzzy TOPSIS (Distance to Ideal) ---
 res_topsis <- fuzzy_topsis(
   decision_mat = d_mat,
   criteria_types = crit_types,
@@ -87,7 +87,7 @@ res_topsis <- fuzzy_topsis(
   bwm_worst = bwm_worst_vec
 )
 
-# 3. Fuzzy WASPAS (Weighted Aggregation)
+# --- 3. Fuzzy WASPAS (Weighted Aggregation) ---
 res_waspas <- fuzzy_waspas(
   decision_mat = d_mat,
   criteria_types = crit_types,
@@ -95,10 +95,40 @@ res_waspas <- fuzzy_waspas(
   bwm_worst = bwm_worst_vec
 )
 
-# Print BWM outputs
+# --- 4. Fuzzy MULTIMOORA (Ratio + Reference Point + Multiplicative) ---
+res_mm <- fuzzy_multimoora(
+  decision_mat = d_mat,
+  criteria_types = crit_types,
+  bwm_best = bwm_best_vec,
+  bwm_worst = bwm_worst_vec
+)
+
+# --- 5. Fuzzy PROMETHEE II (NEAT Implementation) ---
+# We must define preference functions for PROMETHEE.
+# Since our data is on a 1-9 scale:
+# q=0.5 (Indifference threshold)
+# p=2.0 (Strict preference threshold)
+prom_params <- data.frame(
+  Type = c("linear", "linear", "linear", "linear"),
+  q    = c(0.5, 0.5, 0.5, 0.5),
+  p    = c(2.0, 2.0, 2.0, 2.0),
+  s    = c(NA, NA, NA, NA),
+  Role = crit_types
+)
+
+res_prom <- fuzzy_promethee(
+  decision_mat = d_mat,
+  preference_params = prom_params,
+  bwm_best = bwm_best_vec,
+  bwm_worst = bwm_worst_vec
+)
+
+# Print outputs
 print(res_vikor)
 print(res_topsis)
 print(res_waspas)
+print(res_mm)
+print(res_prom)
 ```
 
 ## 5. Plot BWM Results
@@ -107,6 +137,8 @@ print(res_waspas)
 plot(res_vikor)
 plot(res_topsis)
 plot(res_waspas)
+plot(res_mm)   # Ratio System vs Reference Point
+plot(res_prom) # Net Outranking Flow
 ```
 
 ## 6. Run Analysis with Entropy (Data-Driven)
